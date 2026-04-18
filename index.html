@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BRIDGE - Phygital Gateway</title>
-    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/universal-provider@2.12.2/dist/index.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/universal-provider@2.10.2/dist/index.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@walletconnect/modal@2.6.2/dist/index.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
@@ -75,26 +75,36 @@
         /* QR Code Display */
         #qrCodeContainer {
             display: none;
-            margin-top: 20px;
-            padding: 20px;
             background: white;
+            padding: 30px;
             border-radius: 12px;
             text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 0 30px rgba(88, 166, 255, 0.5);
+            animation: slideDown 0.3s ease;
         }
-        #qrCodeContainer.active {
+        #qrCodeContainer.show {
             display: block;
+        }
+        #qrCodeContainer h3 {
+            color: #0d1117;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        #qrCodeContainer p {
+            color: #586069;
+            margin-top: 15px;
+            font-size: 0.9rem;
         }
         #qrcode {
             display: inline-block;
-            padding: 15px;
+            padding: 10px;
             background: white;
-            border-radius: 8px;
         }
-        #qrCodeContainer p {
-            color: #0d1117;
-            margin-top: 15px;
-            font-weight: bold;
-            font-size: 1.1rem;
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Ticket Visual */
@@ -141,24 +151,9 @@
             100% { box-shadow: 0 0 15px #f0c33c66;}
         }
 
-        .ticket-visual h3 { 
-            font-size: 1.8rem; 
-            margin: 0 0 5px 0; 
-            text-transform: uppercase;
-        }
-        .ticket-visual .uid { 
-            font-size: 1.2rem; 
-            letter-spacing: 3px; 
-            opacity: 0.8;
-        }
-        .stats-text { 
-            font-family: monospace; 
-            font-size: 1.1rem; 
-            line-height: 1.8; 
-            padding: 15px; 
-            background: #0d1117; 
-            border-radius: 8px;
-        }
+        .ticket-visual h3 { font-size: 1.8rem; margin: 0 0 5px 0; text-transform: uppercase; }
+        .ticket-visual .uid { font-size: 1.2rem; letter-spacing: 3px; opacity: 0.8; }
+        .stats-text { font-family: monospace; font-size: 1.1rem; line-height: 1.8; padding: 15px; background: #0d1117; border-radius: 8px; }
 
         .status-indicator {
             display: inline-block;
@@ -177,22 +172,15 @@
             50% { opacity: 0.5; }
         }
 
-        a {
-            color: #58a6ff;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
+        a { color: #58a6ff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .debug-btn { background-color: #d29922; margin-top: 15px; }
+        .debug-btn:hover { background-color: #e0a82e; }
 
         @media (max-width: 768px) {
-            .box {
-                width: 100%;
-                min-width: auto;
-            }
-            h1 {
-                font-size: 2rem;
-            }
+            .box { width: 100%; min-width: auto; }
+            h1 { font-size: 2rem; }
         }
     </style>
 </head>
@@ -203,15 +191,20 @@
     <div class="container">
         <div class="box">
             <h2>🔗 1. Secure Web3 Identity</h2>
-            <p style="color: #8b949e; margin-bottom: 25px;">Scan the QR code with your mobile wallet (MetaMask, Trust Wallet, etc.) to authenticate.</p>
-            <button id="connectBtn" class="connect-btn">Connect Wallet (QR Code)</button>
+            <p style="color: #8b949e; margin-bottom: 25px;">Waiting for card scan to authenticate...</p>
+            <div id="connectStatus" style="padding: 15px; background: #0d1117; border-radius: 8px; text-align: center; color: #8b949e; font-size: 1.1rem;">
+                <span class="status-indicator status-pending"></span>
+                Ready for Card Scan
+            </div>
+            <p id="walletAddress" style="margin-top: 20px; color: #58a6ff; word-wrap: break-word; font-family: monospace; font-size: 1.1rem; text-align: center;"></p>
             
             <div id="qrCodeContainer">
+                <h3>📱 Scan with Mobile Wallet</h3>
                 <div id="qrcode"></div>
-                <p>📱 Scan with Mobile Wallet</p>
+                <p>Use MetaMask, Trust Wallet, or any WalletConnect app</p>
             </div>
 
-            <p id="walletAddress" style="margin-top: 20px; color: #58a6ff; word-wrap: break-word; font-family: monospace; font-size: 1.1rem; text-align: center;"></p>
+            <button id="debugBtn" class="connect-btn debug-btn">🔍 Check Connection Status</button>
         </div>
 
         <div class="box">
@@ -238,39 +231,30 @@
 
     <script>
         // ==========================================
-        // 🔴 CONFIGURATION (UPDATE THESE!)
+        // 🔴 CONFIGURATION
         // ==========================================
         const CONFIG = {
-            PROJECT_ID: '881d9f0e18d7f88862688b21c96a6c88', // Your WalletConnect Project ID
-            CONTRACT_ADDRESS: '0xc627Eb9EC77f0BEd7BF9246eB9d194e800c26BF5', // Your NFT Contract Address
-            CHAIN_ID: 'eip155:11155111', // Sepolia testnet (change to eip155:1 for mainnet)
-            CHAIN_ID_HEX: '0xaa36a7', // Sepolia hex (0x1 for mainnet)
-            EXPLORER_URL: 'https://sepolia.etherscan.io', // Explorer URL
-            USE_MOCK_DATA: false // Set to false when using real ESP32 endpoint
+            PROJECT_ID: '881d9f0e18d7f88862688b21c96a6c88',
+            CONTRACT_ADDRESS: '0xc627Eb9EC77f0BEd7BF9246eB9d194e800c26BF5',
+            CHAIN_ID: 'eip155:11155111', 
+            CHAIN_ID_HEX: '0xaa36a7', 
+            EXPLORER_URL: 'https://sepolia.etherscan.io' 
         };
 
         // ==========================================
         // STATE MANAGEMENT
         // ==========================================
         let universalProvider = null;
-        let walletConnectModal = null;
         let userAddress = null;
         let isMinted = false;
         let autoConnectTriggered = false;
         let qrCodeInstance = null;
-
-        // Mock data for testing without ESP32
-        let mockCardData = {
-            uid: null,
-            level: null,
-            scans: 0,
-            last_seen: null
-        };
+        let cardDetected = false;
 
         // ==========================================
         // DOM ELEMENTS
         // ==========================================
-        const connectBtn = document.getElementById('connectBtn');
+        const connectStatus = document.getElementById('connectStatus');
         const mintBtn = document.getElementById('mintBtn');
         const walletAddressEl = document.getElementById('walletAddress');
         const ticketVisual = document.getElementById('ticketVisual');
@@ -278,38 +262,7 @@
         const txHashEl = document.getElementById('txHash');
         const fakeHashText = document.getElementById('fakeHashText');
         const qrCodeContainer = document.getElementById('qrCodeContainer');
-        const qrCodeElement = document.getElementById('qrcode');
-
-        // ==========================================
-        // QR CODE DISPLAY
-        // ==========================================
-        function showQRCode(uri) {
-            console.log("📱 Displaying QR Code");
-            
-            // Clear previous QR code
-            qrCodeElement.innerHTML = '';
-            
-            // Generate new QR code
-            if (window.QRCode) {
-                qrCodeInstance = new QRCode(qrCodeElement, {
-                    text: uri,
-                    width: 256,
-                    height: 256,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-                
-                qrCodeContainer.classList.add('active');
-            } else {
-                console.error("❌ QRCode library not loaded");
-            }
-        }
-
-        function hideQRCode() {
-            qrCodeContainer.classList.remove('active');
-            qrCodeElement.innerHTML = '';
-        }
+        const debugBtn = document.getElementById('debugBtn');
 
         // ==========================================
         // WALLETCONNECT INITIALIZATION
@@ -318,17 +271,11 @@
             console.log("🔄 Initializing WalletConnect...");
             
             try {
-                // Access the WalletConnect library from CDN
                 const UniversalProvider = window.WalletConnectUniversalProvider?.UniversalProvider || 
                                          window['@walletconnect/universal-provider']?.UniversalProvider;
 
-                if (!UniversalProvider) {
-                    throw new Error("WalletConnect UniversalProvider not loaded");
-                }
+                if (!UniversalProvider) throw new Error("WalletConnect UniversalProvider not loaded");
 
-                console.log("📦 Creating WalletConnect provider...");
-
-                // Initialize Universal Provider
                 universalProvider = await UniversalProvider.init({
                     projectId: CONFIG.PROJECT_ID,
                     metadata: {
@@ -339,212 +286,188 @@
                     }
                 });
 
-                console.log("✅ WalletConnect initialized successfully");
+                console.log("✅ WalletConnect initialized");
 
-                // Check for existing session
+                // If already connected from a previous session
                 if (universalProvider.session) {
                     console.log("🔗 Found existing session");
-                    displayAddress();
+                    extractAndDisplayAddress(universalProvider.session);
                 }
 
-                // Setup event listeners
+                // Event: QR Code is ready to be scanned
                 universalProvider.on("display_uri", (uri) => {
-                    console.log("📱 QR Code URI:", uri);
+                    console.log("📱 QR Code URI Generated");
                     showQRCode(uri);
                 });
 
+                // Cleanup on disconnect
                 universalProvider.on("session_delete", () => {
                     console.log("🔌 Session disconnected");
                     resetWalletState();
                 });
 
             } catch (error) {
-                console.error("❌ WalletConnect initialization failed:", error);
-                connectBtn.innerText = "⚠️ Init Failed - Refresh Page";
-                connectBtn.style.backgroundColor = "#f85149";
+                console.error("❌ Init failed:", error);
+                connectStatus.innerHTML = '<span class="status-indicator status-disconnected"></span>Init Failed';
             }
         }
 
         // ==========================================
-        // WALLET CONNECTION
+        // CONNECTION FLOW
         // ==========================================
-        connectBtn.addEventListener('click', async () => {
-            if (!universalProvider) {
-                alert("WalletConnect not initialized. Please refresh the page.");
-                return;
-            }
-
-            connectBtn.innerText = "📱 Scan QR Code...";
-            connectBtn.disabled = true;
-
-            try {
-                const session = await universalProvider.connect({
-                    namespaces: {
-                        eip155: {
-                            methods: ['eth_sendTransaction', 'personal_sign', 'eth_signTypedData'],
-                            chains: [CONFIG.CHAIN_ID],
-                            events: ['chainChanged', 'accountsChanged']
-                        }
-                    }
-                });
-
-                console.log("✅ Wallet connected:", session);
-                
-                hideQRCode();
-                displayAddress();
-
-            } catch (error) {
-                console.error("❌ Connection failed:", error);
-                connectBtn.innerText = "Connect Wallet (QR Code)";
-                connectBtn.disabled = false;
-                hideQRCode();
-            }
-        });
-
-        function displayAddress() {
-            try {
-                const defaultChain = universalProvider.session.namespaces.eip155;
-                if (defaultChain && defaultChain.accounts && defaultChain.accounts.length > 0) {
-                    const fullAccount = defaultChain.accounts[0];
-                    userAddress = fullAccount.split(':')[2]; 
-                    
-                    walletAddressEl.innerHTML = `
-                        <span class="status-indicator status-connected"></span>
-                        Authed: ${userAddress.substring(0,6)}...${userAddress.substring(38)}
-                    `;
-                    
-                    connectBtn.innerText = "✅ Identity Secured";
-                    connectBtn.style.backgroundColor = "#58a6ff";
-                    connectBtn.disabled = true;
-
-                    // Show mint button if card is already scanned
-                    if (mockCardData.uid) {
-                        mintBtn.style.display = "block";
-                    }
-
-                    console.log("✅ Address displayed:", userAddress);
-                }
-            } catch (error) {
-                console.error("❌ Failed to display address:", error);
-            }
-        }
-
-        function resetWalletState() {
-            userAddress = null;
-            walletAddressEl.innerText = "";
-            connectBtn.innerText = "Connect Wallet (QR Code)";
-            connectBtn.style.backgroundColor = "#238636";
-            connectBtn.disabled = false;
-            mintBtn.style.display = "none";
-            hideQRCode();
-        }
-
-        async function startAutoConnection() {
+       async function startAutoConnection() {
             if (!universalProvider || autoConnectTriggered || userAddress) return;
             
             autoConnectTriggered = true;
-            connectBtn.innerText = "🔄 Auto-connecting...";
-            connectBtn.disabled = true;
+            connectStatus.innerHTML = '<span class="status-indicator status-pending"></span>Generating QR...';
 
             try {
+                console.log("🔄 Requesting connection...");
+                
+                // MAGIA JEST TUTAJ: Używamy optionalNamespaces zamiast namespaces
                 const session = await universalProvider.connect({
-                    namespaces: { 
+                    optionalNamespaces: { 
                         eip155: { 
-                            methods: ['personal_sign', 'eth_sendTransaction'], 
+                            methods: ['eth_sendTransaction', 'personal_sign'], 
                             chains: [CONFIG.CHAIN_ID],
                             events: ['chainChanged', 'accountsChanged'] 
                         } 
                     }
                 });
                 
-                hideQRCode();
-                displayAddress();
+                console.log("✅ User approved connection:", session);
+                extractAndDisplayAddress(session);
+
             } catch (error) {
-                console.error("❌ Auto-connect failed:", error);
-                autoConnectTriggered = false;
-                connectBtn.innerText = "Connect Wallet (QR Code)";
-                connectBtn.disabled = false;
+                console.error("❌ Connection failed or rejected:", error);
+                autoConnectTriggered = false; 
+                connectStatus.innerHTML = '<span class="status-indicator status-disconnected"></span>Connection Failed/Rejected';
                 hideQRCode();
             }
         }
 
+        function extractAndDisplayAddress(session) {
+            try {
+                if (!session || !session.namespaces || !session.namespaces.eip155) {
+                     throw new Error("Invalid session structure");
+                }
+                
+                const accounts = session.namespaces.eip155.accounts;
+                if (accounts && accounts.length > 0) {
+                    // Extract the raw address (format: "eip155:chainId:0xAddress")
+                    const fullAccount = accounts[0];
+                    userAddress = fullAccount.includes(':') ? fullAccount.split(':')[2] : fullAccount;
+                    
+                    console.log("✅ Extracted Address:", userAddress);
+                    
+                    // UI Updates
+                    hideQRCode();
+                    walletAddressEl.innerHTML = `<span class="status-indicator status-connected"></span>Authed: ${userAddress.substring(0,6)}...${userAddress.substring(38)}`;
+                    connectStatus.innerHTML = '<span class="status-indicator status-connected"></span>✅ Identity Secured';
+                    connectStatus.style.background = '#238636';
+                    
+                    updateMintButtonVisibility();
+                }
+            } catch (e) {
+                console.error("❌ Failed to extract address:", e);
+            }
+        }
+
         // ==========================================
-        // NFT MINTING
+        // UI HELPERS
+        // ==========================================
+        function updateMintButtonVisibility() {
+            if (userAddress && cardDetected && !isMinted) {
+                mintBtn.style.display = "block";
+            } else {
+                mintBtn.style.display = "none";
+            }
+        }
+
+        function resetWalletState() {
+            userAddress = null;
+            autoConnectTriggered = false;
+            walletAddressEl.innerText = "";
+            connectStatus.innerHTML = '<span class="status-indicator status-pending"></span>Ready for Card Scan';
+            connectStatus.style.background = '#0d1117';
+            mintBtn.style.display = "none";
+            hideQRCode();
+        }
+
+        function showQRCode(uri) {
+            if (!uri) return;
+            document.getElementById('qrcode').innerHTML = '';
+            qrCodeInstance = new QRCode(document.getElementById('qrcode'), {
+                text: uri,
+                width: 256,
+                height: 256,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            qrCodeContainer.classList.add('show');
+            connectStatus.innerHTML = '<span class="status-indicator status-pending"></span>Scan QR Code with Phone';
+        }
+
+        function hideQRCode() {
+            qrCodeContainer.classList.remove('show');
+            if (qrCodeInstance) {
+                document.getElementById('qrcode').innerHTML = '';
+                qrCodeInstance = null;
+            }
+        }
+
+        // ==========================================
+        // MINTING
         // ==========================================
         mintBtn.addEventListener('click', async () => {
-            if (!userAddress || !universalProvider) {
-                alert("Please connect your wallet first!");
-                return;
-            }
+            if (!userAddress || !universalProvider) return;
 
             mintBtn.innerText = "📱 Confirm on Phone...";
             mintBtn.disabled = true;
             mintBtn.style.backgroundColor = "#d2a8ff";
 
             try {
-                console.log("🔄 Sending mint transaction...");
-
+                console.log("🔄 Sending transaction request to phone...");
                 const txHash = await universalProvider.request({
                     method: 'eth_sendTransaction',
                     params: [{
                         from: userAddress,
                         to: CONFIG.CONTRACT_ADDRESS,
-                        data: '0x1249c58b', // mint() function signature
+                        data: '0x1249c58b', // mint() signature
                         chainId: CONFIG.CHAIN_ID_HEX
                     }]
                 });
 
-                console.log("✅ Transaction sent:", txHash);
+                console.log("✅ Transaction approved! Hash:", txHash);
 
                 mintBtn.style.display = "none";
                 txHashEl.style.display = "block";
-                fakeHashText.innerHTML = `
-                    TxHash: <a href="${CONFIG.EXPLORER_URL}/tx/${txHash}" target="_blank">${txHash.substring(0,15)}...</a>
-                `;
+                fakeHashText.innerHTML = `TxHash: <a href="${CONFIG.EXPLORER_URL}/tx/${txHash}" target="_blank">${txHash.substring(0,15)}...</a>`;
                 
                 ticketVisual.innerHTML = `<h3>✨ NFT SECURED ✨</h3><div class="uid">On-Chain Asset</div>`;
-                ticketVisual.className = "ticket-visual";
                 ticketVisual.style.background = "linear-gradient(45deg, #3fb950, #2ea043)";
-                ticketVisual.style.border = "2px solid #3fb950";
-                ticketVisual.style.boxShadow = "0 0 30px #3fb95088";
+                ticketVisual.style.borderColor = "#3fb950";
                 
                 isMinted = true;
 
             } catch (error) {
-                console.error("❌ Transaction failed:", error);
-                alert("Transaction rejected or failed. Please try again.");
-                mintBtn.innerText = "🔮 Mint Phygital NFT (Try Again)";
+                console.error("❌ Mint rejected/failed:", error);
+                alert("Transaction failed or rejected by user.");
+                mintBtn.innerText = "🔮 Mint Phygital NFT";
                 mintBtn.disabled = false;
                 mintBtn.style.backgroundColor = "#8a2be2";
             }
         });
 
         // ==========================================
-        // HARDWARE DATA FETCHING
+        // HARDWARE POLLING
         // ==========================================
         async function fetchStats() {
-                let data = {};
-
-                if (CONFIG.USE_MOCK_DATA) {
-                    // Use mock data for testing
-                    if (mockCardData.uid) {
-                        data[mockCardData.uid] = {
-                            level: mockCardData.level,
-                            scans: mockCardData.scans,
-                            last_seen: mockCardData.last_seen
-                        };
-                    }
-                } else {
-                    // Fetch from real ESP32 endpoint
-                    try {
-                        const response = await fetch('/api/stats');
-                        data = await response.json();
-                    } catch (error) {
-                        console.log("⚠️ Hardware endpoint not available, using mock mode");
-                    }
-                }
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
                 
-                // Process the data
                 let lastUid = null;
                 let lastTime = "";
                 
@@ -558,56 +481,51 @@
                 if (lastUid && !isMinted) {
                     const info = data[lastUid];
                     
-                    // Update ticket visual
-                    ticketVisual.className = "ticket-visual"; 
+                    // Trigger connection flow on first scan
+                    if (!cardDetected) {
+                        cardDetected = true;
+                        console.log("🎴 Card tapped! Initiating WalletConnect flow...");
+                        startAutoConnection();
+                    }
+                    
+                    // Visual Updates
                     ticketVisual.innerHTML = `<h3>${info.level}</h3><div class="uid">UID: ${lastUid}</div>`;
+                    ticketVisual.className = "ticket-visual " + (
+                        info.level.includes("ROOKIE") ? "level-rookie" :
+                        info.level.includes("SILVER") ? "level-silver" :
+                        info.level.includes("GOLD") ? "level-vip-gold" : "level-none"
+                    );
 
-                    if (info.level.includes("ROOKIE")) ticketVisual.classList.add("level-rookie");
-                    else if (info.level.includes("SILVER")) ticketVisual.classList.add("level-silver");
-                    else if (info.level.includes("GOLD")) ticketVisual.classList.add("level-vip-gold");
-
-                    // Update stats
                     statsInfo.innerHTML = `
                         <span style="color:#8b949e">UID:</span> <span style="color:white">${lastUid}</span> <br>
                         <span style="color:#8b949e">Level:</span> <span style="color:white">${info.level}</span> <br>
-                        <span style="color:#8b949e">Scans:</span> <span style="color:white">${info.scans} / 5 to Max</span> <br>
-                        <span style="color:#8b949e">Sync Time:</span> <span style="color:white">${info.last_seen}</span>
+                        <span style="color:#8b949e">Scans:</span> <span style="color:white">${info.scans} / 5</span> <br>
+                        <span style="color:#8b949e">Time:</span> <span style="color:white">${info.last_seen}</span>
                     `;
 
-                    // Auto-connect wallet when card detected (optional)
-                    if (!userAddress && !autoConnectTriggered) {
-                        console.log("🎴 Card detected! Auto-triggering wallet connect...");
-                        // Uncomment next line to enable auto-connect on card scan:
-                        // startAutoConnection();
-                    }
-
-                    // Show mint button if wallet is connected
-                    if (userAddress && !isMinted) {
-                        mintBtn.style.display = "block";
-                    }
+                    updateMintButtonVisibility();
                 }
+            } catch (error) {
+                // Fails silently if Flask isn't running
+            }
         }
 
         // ==========================================
-        // INITIALIZATION
+        // STARTUP
         // ==========================================
-        window.addEventListener('load', async () => {
-            console.log("🚀 Application starting...");
-            
-            // Small delay to ensure libraries are fully loaded
+        window.addEventListener('load', () => {
             setTimeout(async () => {
                 await initWeb3();
-                
-                // Start polling for hardware data
                 setInterval(fetchStats, 2000);
-                fetchStats();
-                
-                console.log("✅ Application ready!");
             }, 500);
         });
 
-        // Debug info
-        console.log("🔧 Configuration:", CONFIG);
+        // Debug Tool
+        debugBtn.addEventListener('click', () => {
+            console.log("🔍 === DEBUG ===");
+            console.log("userAddress:", userAddress);
+            console.log("session:", universalProvider?.session);
+        });
     </script>
 </body>
 </html>
