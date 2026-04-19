@@ -1,5 +1,5 @@
 # hackathon-Bridge
-**ETHSilesia Hackathon Project by Yevheniia (Żeniula) Muravska**
+**ETHSilesia Hackathon Project by Yevheniia (Żeniula) Muravska** - SOLO PARTICIPANT
 
 **Concept:** Merging IoT with Web3 to create a seamless, unique user experience and build a network of loyal customers in the event and entertainment industry.
 
