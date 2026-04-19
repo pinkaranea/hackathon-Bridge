@@ -396,11 +396,27 @@
                         </div>
                     `;
                     
+                    let scansLeft = 5 - info.scans;
+                    let rewardMessage = "";
+                    
+                    if (scansLeft > 0) {
+                        rewardMessage = `
+                            <div style="margin-top: 15px; padding: 12px; background: rgba(201, 136, 168, 0.1); border: 1px dashed #c988a8; border-radius: 8px; color: #d99bb9; font-size: 0.95rem; text-align: center;">
+                                <b>${scansLeft} scans left</b> to unlock a PaySafeCard or V-Bucks in your PKO bank account
+                            </div>`;
+                    } else {
+                        rewardMessage = `
+                            <div style="margin-top: 15px; padding: 12px; background: rgba(168, 201, 168, 0.1); border: 1px dashed #a8c9a8; border-radius: 8px; color: #a8c9a8; font-size: 0.95rem; text-align: center;">
+                                <b>Reward Unlocked</b> Claim your PaySafeCard / Robux
+                            </div>`;
+                    }
+
                     statsInfo.innerHTML = `
                         <span style="color:#9a9aa0">UID:</span> <span style="color:white">${lastUid}</span> <br>
                         <span style="color:#9a9aa0">Level:</span> <span style="color:white">${info.level}</span> <br>
                         <span style="color:#9a9aa0">Scans:</span> <span style="color:white">${info.scans} / 5</span> <br>
                         <span style="color:#9a9aa0">Time:</span> <span style="color:white">${info.last_seen}</span>
+                        ${rewardMessage}
                     `;
                     updateMintButtonVisibility();
                 }
