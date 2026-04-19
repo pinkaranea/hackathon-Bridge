@@ -2,7 +2,11 @@
 **ETHSilesia Hackathon Project by Yevheniia (Żeniula) Muravska** - SOLO PARTICIPANT
 
 **Concept:** Merging IoT with Web3 to create a seamless, unique user experience and build a network of loyal customers in the event and entertainment industry.
-**Usecases:** 
+
+**Use Cases:**
+* **For Event Organizers:** Completely eliminates ticket scalping and fraud through cryptographically secure NFC-to-Wallet pairing. It also provides a radically cheaper, open-source alternative to expensive, proprietary IoT gate systems.
+* **For Attendees & Fans:** Delivers a frictionless, highly accessible entry experience (just tap a card or wristband). Transforms a one-off ticket into a permanent digital souvenir (NFT) and unlocks an engaging real-world gamification system (leveling up from Rookie to VIP based on attendance).
+* **For Sponsors & Brands:** Turns the physical NFC wristband into a premium, wearable marketing asset. Offers a direct, modern channel to build loyalty programs and distribute future rewards (via token-gating or airdrops) to an engaged, tech-savvy audience.
 
 **Tech Stack:**
 * **Hardware:** Arduino/C++ for ESP32 NFC programming;
