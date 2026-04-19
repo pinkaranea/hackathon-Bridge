@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRIDGE - Phygital Gateway</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/universal-provider@2.10.2/dist/index.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/modal@2.6.2/dist/index.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: #1a1a1f; color: #d4d4d8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; min-height: 100vh; }
+        h1 { color: #e8b4d0; text-align: center; font-size: 2.5rem; text-shadow: 0 0 8px #e8b4d022; letter-spacing: 2px; margin-bottom: 20px; }
+        .container { display: flex; justify-content: center; gap: 30px; margin-top: 40px; flex-wrap: wrap; max-width: 1400px; margin-left: auto; margin-right: auto; }
+        .box { background: #242429; padding: 30px; border-radius: 12px; border: 1px solid #3a3a40; width: 45%; min-width: 350px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .box h2 { color: #e0e0e4; margin-bottom: 15px; font-size: 1.5rem; }
+        
+        button.connect-btn { background-color: #c988a8; color: white; border: none; padding: 15px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; transition: 0.3s; }
+        button.connect-btn:hover { background-color: #d99bb9; box-shadow: 0 0 12px #c988a822; }
+        button.connect-btn:disabled { background-color: #3a3a40; cursor: not-allowed; box-shadow: none; opacity: 0.6; }
+
+        #qrCodeContainer { display: none; background: white; padding: 30px; border-radius: 12px; text-align: center; margin-top: 20px; box-shadow: 0 0 20px rgba(201, 136, 168, 0.2); animation: slideDown 0.3s ease; }
+        #qrCodeContainer.show { display: block; }
+        #qrCodeContainer h3 { color: #1a1a1f; margin-bottom: 15px; font-size: 1.2rem; }
+        #qrCodeContainer p { color: #666; margin-top: 15px; font-size: 0.9rem; }
+        #qrcode { display: inline-block; padding: 10px; background: white; }
+
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* TICKET VISUAL - Updated for image and text side-by-side */
+        .ticket-visual { 
+            width: 100%; 
+            height: 180px; 
+            border-radius: 15px; 
+            margin-bottom: 20px; 
+            display: flex; 
+            flex-direction: row; /* Align image and text horizontally */
+            justify-content: center; 
+            align-items: center; 
+            color: white; 
+            font-family: monospace; 
+            transition: all 0.5s ease; 
+            border: 2px solid rgba(255,255,255,0.08); 
+            gap: 20px; /* Space between image and text */
+        }
+        
+        /* IMAGE HOLDER STYLES */
+        .rank-image {
+            max-height: 120px;
+            max-width: 120px;
+            object-fit: contain;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .ticket-text {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start; /* Align text to the left of its container */
+        }
+        .ticket-text.center {
+            align-items: center;
+            text-align: center;
+        }
+
+        .level-none { background: linear-gradient(45deg, #242429, #3a3a40); color: #9a9aa0; }
+        .level-rookie { background: linear-gradient(45deg, #3a3040, #c988a8); border-color: #c988a8; box-shadow: 0 0 15px #c988a822; }
+        .level-silver { background: linear-gradient(135deg, #9a9aa0, #d4d4d8, #9a9aa0); border-color: #e0e0e4; color: #1a1a1f; box-shadow: 0 0 15px #d4d4d822; }
+        .level-vip-gold { background: linear-gradient(45deg, #d4b08c, #e6c4a3, #d4b08c); border-color: #d4b08c; color: #1a1a1f; box-shadow: 0 0 20px #d4b08c33; animation: pulse-gold 2s infinite; }
+        @keyframes pulse-gold { 0% { box-shadow: 0 0 12px #d4b08c28;} 50% { box-shadow: 0 0 25px #d4b08c44;} 100% { box-shadow: 0 0 12px #d4b08c28;} }
+
+        .ticket-visual h3 { font-size: 1.8rem; margin: 0 0 5px 0; text-transform: uppercase; }
+        .ticket-visual .uid { font-size: 1.2rem; letter-spacing: 3px; opacity: 0.8; }
+        .stats-text { font-family: monospace; font-size: 1.1rem; line-height: 1.8; padding: 15px; background: #1a1a1f; border-radius: 8px; }
+
+        .status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; animation: pulse 2s infinite; }
+        .status-connected { background-color: #a8c9a8; }
+        .status-disconnected { background-color: #c99a9a; }
+        .status-pending { background-color: #d4b08c; }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        a { color: #d99bb9; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        @media (max-width: 768px) { .box { width: 100%; min-width: auto; } h1 { font-size: 2rem; } }
+    </style>
+</head>
+<body>
+
+    <h1>BRIDGE</h1>
+
+    <div class="container">
+        <div class="box">
+            <h2>1. Secure Web3 Identity</h2>
+            <p style="color: #9a9aa0; margin-bottom: 25px;">Waiting for card scan to authenticate...</p>
+            <div id="connectStatus" style="padding: 15px; background: #1a1a1f; border-radius: 8px; text-align: center; color: #9a9aa0; font-size: 1.1rem;">
+                <span class="status-indicator status-pending"></span>
+                Ready for Card Scan
+            </div>
+            
+            <p id="walletAddress" style="margin-top: 20px; color: #c988a8; word-wrap: break-word; font-family: monospace; font-size: 1.1rem; text-align: center;"></p>
+            
+            <div style="text-align: center;">
+                <button id="disconnectBtn" style="display: none; background: transparent; border: 1px solid #c99a9a; color: #c99a9a; padding: 8px 15px; border-radius: 6px; margin-top: 15px; cursor: pointer; font-size: 0.9rem; transition: 0.3s;">
+                    Disconnect & Reset
+                </button>
+            </div>
+            
+            <div id="qrCodeContainer">
+                <h3>Scan with Mobile Wallet</h3>
+                <div id="qrcode"></div>
+                <p>Use MetaMask, Trust Wallet, or any WalletConnect app</p>
+            </div>
+        </div>
+
+        <div class="box">
+            <h2>2. Phygital Ticket Status</h2>
+            <div id="ticketVisual" class="ticket-visual level-none">
+                <div class="ticket-text center">
+                    <h3>Awaiting Scan...</h3>
+                    <div class="uid">TAP CARD ON GATE</div>
+                </div>
+            </div>
+            <div id="statsInfo" class="stats-text">
+                <span style="color:#9a9aa0">Status:</span> <span style="color:white">Waiting for hardware sync...</span>
+            </div>
+
+            <div style="margin-top: 25px; text-align: center;">
+                <button id="mintBtn" class="connect-btn" style="display: none;">
+                    Mint Phygital NFT
+                </button>
+                <div id="txHash" style="margin-top: 15px; padding: 10px; background: #1a1a1f; border: 1px solid #a8c9a8; border-radius: 8px; display: none;">
+                    <p style="color: #a8c9a8; margin: 0; font-weight: bold;">NFT Successfully Minted</p>
+                    <p id="fakeHashText" style="color: #c988a8; margin: 5px 0 0 0; font-family: monospace; font-size: 0.9rem; word-wrap: break-word;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Image mapping for ranks
+        // Image mapping for ranks (Zaktualizowane ścieżki Flaska!)
+        const RANK_IMAGES = {
+            "ROOKIE": "/static/rookienobg.png",
+            "SILVER": "/static/silvernobg.png",
+            "VIP GOLD": "/static/goldnobg.png"
+        };
+
+        const CONFIG = {
+            PROJECT_ID: '881d9f0e18d7f88862688b21c96a6c88', 
+            CONTRACT_ADDRESS: '0xc627Eb9EC77f0BEd7BF9246eB9d194e800c26BF5', 
+            CHAIN_ID: 'eip155:11155111', 
+            CHAIN_ID_HEX: '0xaa36a7', 
+            EXPLORER_URL: 'https://sepolia.etherscan.io' 
+        };
+
+        let universalProvider = null;
+        let userAddress = null;
+        let currentUid = null;
+        let isLinkedToDatabase = false;
+        let isMinted = false;
+        let showSuccessMessage = false;
+        let autoConnectTriggered = false;
+        let qrCodeInstance = null;
+        let cardDetected = false;
+
+        const connectStatus = document.getElementById('connectStatus');
+        const mintBtn = document.getElementById('mintBtn');
+        const walletAddressEl = document.getElementById('walletAddress');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const ticketVisual = document.getElementById('ticketVisual');
+        const statsInfo = document.getElementById('statsInfo');
+        const txHashEl = document.getElementById('txHash');
+        const fakeHashText = document.getElementById('fakeHashText');
+        const qrCodeContainer = document.getElementById('qrCodeContainer');
+
+        async function initWeb3() {
+            console.log("Initializing WalletConnect...");
+            try {
+                const UniversalProvider = window.WalletConnectUniversalProvider?.UniversalProvider || window['@walletconnect/universal-provider']?.UniversalProvider;
+                if (!UniversalProvider) throw new Error("WalletConnect not loaded");
+
+                universalProvider = await UniversalProvider.init({
+                    projectId: CONFIG.PROJECT_ID,
+                    metadata: { name: 'Bridge', description: 'IoT to Web3', url: window.location.origin, icons: [] }
+                });
+
+                if (universalProvider.session) {
+                    console.log("Found existing session");
+                    extractAndDisplayAddress(universalProvider.session);
+                }
+
+                universalProvider.on("display_uri", (uri) => {
+                    console.log("Generating QR code");
+                    showQRCode(uri);
+                });
+
+                universalProvider.on("session_delete", () => resetWalletState());
+                console.log("WalletConnect Ready");
+            } catch (error) {
+                connectStatus.innerHTML = '<span class="status-indicator status-disconnected"></span>Initialization Error';
+            }
+        }
+
+        async function startAutoConnection() {
+            if (!universalProvider || autoConnectTriggered || userAddress) return;
+            autoConnectTriggered = true;
+            connectStatus.innerHTML = '<span class="status-indicator status-pending"></span>Generating QR...';
+
+            try {
+                console.log("Awaiting phone authorization...");
+                const session = await universalProvider.connect({
+                    optionalNamespaces: { 
+                        eip155: { 
+                            methods: ['eth_sendTransaction', 'personal_sign'], 
+                            chains: [CONFIG.CHAIN_ID],
+                            events: ['chainChanged', 'accountsChanged'] 
+                        } 
+                    }
+                });
+                
+                console.log("Connected successfully:", session);
+                extractAndDisplayAddress(session);
+            } catch (error) {
+                console.error("Connection rejected:", error);
+                autoConnectTriggered = false; 
+                connectStatus.innerHTML = '<span class="status-indicator status-disconnected"></span>Connection rejected';
+                hideQRCode();
+            }
+        }
+
+        function extractAndDisplayAddress(session) {
+            try {
+                const accounts = session.namespaces.eip155.accounts;
+                if (accounts && accounts.length > 0) {
+                    const fullAccount = accounts[0];
+                    userAddress = fullAccount.includes(':') ? fullAccount.split(':')[2] : fullAccount;
+                    
+                    hideQRCode();
+                    walletAddressEl.innerHTML = `<span class="status-indicator status-connected"></span>Identity Verified & Linked`;
+                    connectStatus.innerHTML = '<span class="status-indicator status-connected"></span>Secure Connection Active';
+                    connectStatus.style.background = '#3a5040';
+                    disconnectBtn.style.display = "inline-block";
+                    
+                    updateMintButtonVisibility();
+                    checkBlockchainStatus(userAddress);
+                }
+            } catch (e) {
+                console.error("Error retrieving address:", e);
+            }
+        }
+
+        async function saveIdentityToDatabase(uid, address) {
+            if (isLinkedToDatabase) return;
+            try {
+                console.log("Sending link to Python...");
+                const response = await fetch('/api/link_wallet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uid: uid, wallet: address })
+                });
+                
+                if (response.ok) {
+                    console.log("Identity permanently linked in JSON database!");
+                    isLinkedToDatabase = true;
+                }
+            } catch (error) {
+                console.error("Database save error:", error);
+            }
+        }
+
+        async function checkBlockchainStatus(wallet) {
+            try {
+                console.log("Checking Sepolia for address:", wallet);
+                const rpcProvider = new ethers.JsonRpcProvider("https://rpc.sepolia.org");
+                const CONTRACT_ABI = ["function balanceOf(address owner) view returns (uint256)"];
+                const contract = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, CONTRACT_ABI, rpcProvider);
+                const balance = await contract.balanceOf(wallet);
+                console.log("Found tokens:", balance.toString());
+                
+                if (balance > 0) {
+                    console.log("User already claimed the reward!");
+                    isMinted = true; 
+                    showSuccessMessage = true;
+                    mintBtn.style.display = "none";
+                    
+                    // Keep existing image if present
+                    const currentImg = ticketVisual.querySelector('.rank-image');
+                    const imgHtml = currentImg ? currentImg.outerHTML : '';
+                    
+                    ticketVisual.innerHTML = `
+                        ${imgHtml}
+                        <div class="ticket-text ${currentImg ? '' : 'center'}">
+                            <h3>NFT SECURED</h3>
+                            <div class="uid">On-Chain Verified</div>
+                        </div>`;
+                        
+                    ticketVisual.style.background = "linear-gradient(45deg, #6a8a6a, #8aa88a)";
+                    ticketVisual.style.borderColor = "#a8c9a8";
+                    ticketVisual.style.boxShadow = "0 0 20px #a8c9a844";
+                    
+                    setTimeout(() => {
+                        showSuccessMessage = false;
+                        ticketVisual.style.background = "";
+                        ticketVisual.style.borderColor = "";
+                        ticketVisual.style.boxShadow = "";
+                    }, 5000);
+                }
+            } catch (error) {
+                console.error("Blockchain read error:", error);
+            }
+        }
+
+        mintBtn.addEventListener('click', async () => {
+            if (!userAddress || !universalProvider) return;
+            mintBtn.innerText = "Confirm on Phone...";
+            mintBtn.disabled = true;
+            mintBtn.style.backgroundColor = "#b899c9";
+
+            try {
+                const txHash = await universalProvider.request({
+                    method: 'eth_sendTransaction',
+                    params: [{
+                        from: userAddress,
+                        to: CONFIG.CONTRACT_ADDRESS,
+                        data: '0x1249c58b',
+                        chainId: CONFIG.CHAIN_ID_HEX,
+                        gas: '0x493E0'
+                    }]
+                });
+
+                mintBtn.style.display = "none";
+                txHashEl.style.display = "block";
+                
+                // Keep existing image if present
+                const currentImg = ticketVisual.querySelector('.rank-image');
+                const imgHtml = currentImg ? currentImg.outerHTML : '';
+                
+                ticketVisual.innerHTML = `
+                    ${imgHtml}
+                    <div class="ticket-text ${currentImg ? '' : 'center'}">
+                        <h3>NFT SECURED</h3>
+                        <div class="uid">On-Chain Asset</div>
+                    </div>`;
+                    
+                ticketVisual.style.background = "linear-gradient(45deg, #6a8a6a, #8aa88a)";
+                ticketVisual.style.borderColor = "#a8c9a8";
+                ticketVisual.style.boxShadow = "0 0 20px #a8c9a844";
+                isMinted = true;
+                showSuccessMessage = true;
+
+                setTimeout(() => {
+                    showSuccessMessage = false;
+                    txHashEl.style.display = "none";
+                    ticketVisual.style.background = "";
+                    ticketVisual.style.borderColor = "";
+                    ticketVisual.style.boxShadow = "";
+                }, 6000);
+            } catch (error) {
+                console.error("Transaction error details:", error);
+                alert("Transaction rejected. Please check your Sepolia ETH balance and contract permissions.");
+                mintBtn.innerText = "Mint Phygital NFT";
+                mintBtn.disabled = false;
+                mintBtn.style.backgroundColor = "#c988a8";
+            }
+        });
+
+        async function fetchStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                let lastUid = null;
+                let lastTime = "";
+                for (const [uid, info] of Object.entries(data)) {
+                    if (info.last_seen > lastTime) { lastTime = info.last_seen; lastUid = uid; }
+                }
+
+                if (lastUid && !showSuccessMessage) {
+                    const info = data[lastUid];
+                    currentUid = lastUid;
+                    if (!cardDetected) {
+                        cardDetected = true;
+                        if (!userAddress && !autoConnectTriggered) startAutoConnection();
+                    }
+                    if (userAddress && currentUid && !isLinkedToDatabase) {
+                        saveIdentityToDatabase(currentUid, userAddress);
+                    }
+                    
+                    // Determine which image to show based on rank
+                    const levelKey = info.level.toUpperCase();
+                    let imgSrc = RANK_IMAGES[levelKey];
+                    // Fallback for gold in case API returns just "GOLD" or "VIP GOLD"
+                    if (!imgSrc && levelKey.includes("GOLD")) imgSrc = RANK_IMAGES["VIP GOLD"];
+                    
+                    const imgTag = imgSrc ? `<img src="${imgSrc}" class="rank-image" alt="Rank">` : '';
+                    const textAlignmentClass = imgSrc ? '' : 'center'; // Center text if no image
+                    
+                    ticketVisual.className = "ticket-visual " + (
+                        info.level.includes("ROOKIE") ? "level-rookie" :
+                        info.level.includes("SILVER") ? "level-silver" :
+                        info.level.includes("GOLD") ? "level-vip-gold" : "level-none"
+                    );
+                    
+                    // Inject image and text
+                    ticketVisual.innerHTML = `
+                        ${imgTag}
+                        <div class="ticket-text ${textAlignmentClass}">
+                            <h3>${info.level}</h3>
+                            <div class="uid">UID: ${lastUid}</div>
+                        </div>
+                    `;
+                    
+                    statsInfo.innerHTML = `
+                        <span style="color:#9a9aa0">UID:</span> <span style="color:white">${lastUid}</span> <br>
+                        <span style="color:#9a9aa0">Level:</span> <span style="color:white">${info.level}</span> <br>
+                        <span style="color:#9a9aa0">Scans:</span> <span style="color:white">${info.scans} / 5</span> <br>
+                        <span style="color:#9a9aa0">Time:</span> <span style="color:white">${info.last_seen}</span>
+                    `;
+                    updateMintButtonVisibility();
+                }
+            } catch (error) {}
+        }
+
+        disconnectBtn.addEventListener('click', async () => {
+            console.log("Manual session disconnect and reset...");
+            if (universalProvider && universalProvider.session) {
+                try { await universalProvider.disconnect(); } catch(e) {}
+            }
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.reload();
+        });
+
+        function updateMintButtonVisibility() {
+            if (userAddress && cardDetected && !isMinted) mintBtn.style.display = "block";
+            else mintBtn.style.display = "none";
+        }
+
+        function showQRCode(uri) {
+            if (!uri) return;
+            document.getElementById('qrcode').innerHTML = '';
+            qrCodeInstance = new QRCode(document.getElementById('qrcode'), {
+                text: uri, width: 256, height: 256, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H
+            });
+            qrCodeContainer.classList.add('show');
+            connectStatus.innerHTML = '<span class="status-indicator status-pending"></span>Scan QR Code with Phone';
+        }
+
+        function hideQRCode() {
+            qrCodeContainer.classList.remove('show');
+            if (qrCodeInstance) { document.getElementById('qrcode').innerHTML = ''; qrCodeInstance = null; }
+        }
+
+        function resetWalletState() {
+            userAddress = null; autoConnectTriggered = false; isLinkedToDatabase = false;
+            walletAddressEl.innerText = "";
+            disconnectBtn.style.display = "none";
+            connectStatus.innerHTML = '<span class="status-indicator status-pending"></span>Ready for Card Scan';
+            connectStatus.style.background = '#1a1a1f'; mintBtn.style.display = "none"; hideQRCode();
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(async () => {
+                await initWeb3();
+                setInterval(fetchStats, 2000);
+            }, 500);
+        });
+    </script>
+</body>
+</html>
