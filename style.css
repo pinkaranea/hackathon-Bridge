@@ -1,0 +1,47 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background-color: #1a1a1f; color: #d4d4d8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; }
+h1 { color: #e8b4d0; text-align: center; font-size: 2.8rem; text-shadow: 0 0 8px #e8b4d022; letter-spacing: 2px; margin-top: 2vh; margin-bottom: 20px; }
+
+.container { display: flex; justify-content: center; gap: 40px; margin-top: 6vh; flex-wrap: wrap; width: 100%; max-width: 1400px; margin-left: auto; margin-right: auto; padding: 0 20px; }
+.box { background: #242429; padding: 45px; border-radius: 12px; border: 1px solid #3a3a40; width: calc(50% - 20px); max-width: 600px; min-width: 400px; box-shadow: 0 12px 32px rgba(0,0,0,0.4); }
+.box h2 { color: #e0e0e4; margin-bottom: 20px; font-size: 1.8rem; }
+
+button.connect-btn { background-color: #c988a8; color: white; border: none; padding: 18px 24px; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; width: 100%; transition: 0.3s; }
+button.connect-btn:hover { background-color: #d99bb9; box-shadow: 0 0 12px #c988a822; }
+button.connect-btn:disabled { background-color: #3a3a40; cursor: not-allowed; box-shadow: none; opacity: 0.6; }
+
+#qrCodeContainer { display: none; background: white; padding: 30px; border-radius: 12px; text-align: center; margin-top: 25px; box-shadow: 0 0 20px rgba(201, 136, 168, 0.2); animation: slideDown 0.3s ease; }
+#qrCodeContainer.show { display: block; }
+#qrCodeContainer h3 { color: #1a1a1f; margin-bottom: 15px; font-size: 1.3rem; }
+#qrCodeContainer p { color: #666; margin-top: 15px; font-size: 1rem; }
+#qrcode { display: inline-block; padding: 10px; background: white; }
+
+@keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+.ticket-visual { width: 100%; height: 240px; border-radius: 15px; margin-bottom: 25px; display: flex; flex-direction: row; justify-content: center; align-items: center; color: white; font-family: monospace; transition: all 0.5s ease; border: 2px solid rgba(255,255,255,0.08); gap: 40px; }
+.rank-image { max-height: 160px; max-width: 160px; margin-left: -30px; object-fit: contain; animation: float 3s ease-in-out infinite; }
+@keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0px); } }
+
+.ticket-text { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+.ticket-text.center { align-items: center; text-align: center; }
+
+.level-none { background: linear-gradient(45deg, #242429, #3a3a40); color: #9a9aa0; }
+.level-rookie { background: linear-gradient(45deg, #3a3040, #c988a8); border-color: #c988a8; box-shadow: 0 0 15px #c988a822; }
+.level-silver { background: linear-gradient(135deg, #9a9aa0, #d4d4d8, #9a9aa0); border-color: #e0e0e4; color: #1a1a1f; box-shadow: 0 0 15px #d4d4d822; }
+.level-vip-gold { background: linear-gradient(45deg, #d4b08c, #e6c4a3, #d4b08c); border-color: #d4b08c; color: #1a1a1f; box-shadow: 0 0 20px #d4b08c33; animation: pulse-gold 2s infinite; }
+@keyframes pulse-gold { 0% { box-shadow: 0 0 12px #d4b08c28;} 50% { box-shadow: 0 0 25px #d4b08c44;} 100% { box-shadow: 0 0 12px #d4b08c28;} }
+
+.ticket-visual h3 { font-size: 2.2rem; margin: 0 0 8px 0; text-transform: uppercase; }
+.ticket-visual .uid { font-size: 1.3rem; letter-spacing: 3px; opacity: 0.8; }
+.stats-text { font-family: monospace; font-size: 1.2rem; line-height: 1.9; padding: 20px; background: #1a1a1f; border-radius: 8px; }
+
+.status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 10px; animation: pulse 2s infinite; }
+.status-connected { background-color: #a8c9a8; }
+.status-disconnected { background-color: #c99a9a; }
+.status-pending { background-color: #d4b08c; }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+a { color: #d99bb9; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+@media (max-width: 900px) { .box { width: 100%; min-width: auto; max-width: 100%; } h1 { font-size: 2rem; } }
