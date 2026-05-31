@@ -1,8 +1,10 @@
 # hackathon-Bridge
-**ETHSilesia Hackathon Project by Yevheniia (Żeniula) Muravska** - SOLO PARTICIPANT
 
-**Concept:** Merging IoT with Web3 to create a seamless, unique user experience and build a network of loyal customers in the event and entertainment industry.
+🏆 **1st Place Winner - Innovation Track (Sponsored by Katowice Hub)** 🏆
 
+**ETHSilesia Hackathon Project** built by Yevheniia (Żeniula) Muravska - **SOLO PARTICIPANT**
+
+**Concept:** Merging IoT with Web3 to create a seamless, unique user experience and build a network of loyal customers in the event and entertainment industry
 **Use Cases:**
 * **For Event Organizers:** Completely eliminates ticket scalping and fraud through cryptographically secure NFC-to-Wallet pairing. It also provides a radically cheaper, open-source alternative to expensive, proprietary IoT gate systems.
 * **For Attendees & Fans:** Delivers a frictionless, highly accessible entry experience (just tap a card or wristband). Transforms a one-off ticket into a permanent digital souvenir (NFT) and unlocks an engaging real-world gamification system (leveling up from Rookie to VIP based on attendance).
